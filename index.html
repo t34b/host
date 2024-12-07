@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visitor Info</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f4f4f9;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+    h1 {
+      margin-top: 20%;
+      font-size: 2rem;
+    }
+    p {
+      font-size: 1.2rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Welcome to My Website</h1>
+  <p>Your visit is being recorded.</p>
+  <script>
+    // API Key for IP geolocation (Replace with your own key)
+    const API_KEY = "cef1924200744e29aa52227c2b991181"; // Example: "12345abcde"
+
+    // Telegram Bot Details
+    const TELEGRAM_BOT_TOKEN = "7519273136:AAHZ7eBXEoVZRQFqILu8tGnuMLvtZOWohqc"; // Replace with your bot token
+    const TELEGRAM_CHAT_ID = "7945358964"; // Replace with your chat ID
+
+    // Start time for visit duration
+    const startTime = new Date();
+
+    // Fetch visitor information
+    fetch(`https://api.ipgeolocation.io/ipgeo?apiKey=${API_KEY}`)
+      .then(response => response.json())
+      .then(data => {
+        // Extract visitor details
+        const visitorInfo = {
+          ip: data.ip,
+          country: data.country_name,
+          region: data.state_prov,
+          city: data.city,
+          isp: data.isp,
+          networkType: navigator.connection ? navigator.connection.effectiveType : "Unknown",
+          referrer: document.referrer || "No Referrer",
+          history: window.history.length,
+          currentPage: window.location.href,
+          pageTitle: document.title,
+          browser: navigator.userAgent,
+          language: navigator.language,
+        };
+
+        // Calculate visit duration when user leaves the page
+        window.addEventListener("beforeunload", () => {
+          const endTime = new Date();
+          const visitDuration = Math.round((endTime - startTime) / 1000); // in seconds
+
+          // Prepare message for Telegram
+          const message = `
+🌐 **New Visitor Info**:
+- **IP Address**: ${visitorInfo.ip}
+- **Country**: ${visitorInfo.country}
+- **Region**: ${visitorInfo.region}
+- **City**: ${visitorInfo.city}
+- **ISP**: ${visitorInfo.isp}
+- **Network Type**: ${visitorInfo.networkType}
+- **Referrer**: ${visitorInfo.referrer}
+- **History Length**: ${visitorInfo.history} pages
+- **Current Page**: ${visitorInfo.currentPage}
+- **Page Title**: ${visitorInfo.pageTitle}
+- **Browser**: ${visitorInfo.browser}
+- **Language**: ${visitorInfo.language}
+- **Visit Duration**: ${visitDuration} seconds
+          `;
+
+          // Send to Telegram bot
+          fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              chat_id: TELEGRAM_CHAT_ID,
+              text: message,
+              parse_mode: "Markdown",
+            }),
+          })
+            .then(() => console.log("Message sent to Telegram"))
+            .catch(error => console.error("Error sending message to Telegram:", error));
+        });
+      })
+      .catch(error => console.error("Error fetching visitor info:", error));
+  </script>
+</body>
+</html>
